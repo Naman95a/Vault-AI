@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import authOptions from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request) {
   try {
@@ -10,16 +11,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { masterSalt } = await request.json();
+    const { masterSalt, password } = await request.json();
 
-    if (!masterSalt) {
-      return NextResponse.json({ error: 'Master salt is required' }, { status: 400 });
+    if (!masterSalt || !password) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Update user in database
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { masterSalt },
+      data: { masterSalt, hashedPassword },
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

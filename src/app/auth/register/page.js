@@ -168,7 +168,12 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading}>
+          <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', borderRadius: 'var(--radius)', color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5' }}>
+            <strong style={{ color: 'var(--danger)', display: 'block', marginBottom: '8px' }}>⚠️ Zero-Knowledge Architecture</strong>
+            We do not store your Master Password. <strong>If you lose it, your data cannot be recovered by anyone.</strong>
+          </div>
+
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: '24px' }}>
             {loading ? <><span className="spinner"></span> Creating Vault...</> : 'Create Encrypted Vault'}
           </button>
 
