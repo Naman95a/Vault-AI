@@ -132,5 +132,3 @@ User's Browser                    Server
 MIT License — feel free to use this for your portfolio!
 
 ---
-
-**Built with ❤️ by [Your Name]**
