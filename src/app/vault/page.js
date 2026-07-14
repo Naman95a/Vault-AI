@@ -13,7 +13,7 @@ const CATEGORY_COLORS = {
 };
 
 export default function VaultPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const toast = useToast();
 
@@ -21,6 +21,10 @@ export default function VaultPage() {
   const [cryptoKey, setCryptoKey] = useState(null);
   const [masterPassword, setMasterPassword] = useState('');
   const [unlocking, setUnlocking] = useState(false);
+  const [setupPassword, setSetupPassword] = useState('');
+  const [setupConfirm, setSetupConfirm] = useState('');
+  const [settingUp, setSettingUp] = useState(false);
+  const [setupStrength, setSetupStrength] = useState(null);
   const [credentials, setCredentials] = useState([]);
   const [decryptedCache, setDecryptedCache] = useState({});
   const [loading, setLoading] = useState(true);
@@ -84,6 +88,37 @@ export default function VaultPage() {
     } finally {
       setUnlocking(false);
       setMasterPassword('');
+    }
+  };
+
+  // Setup vault (OAuth users)
+  const handleSetupVault = async (e) => {
+    e.preventDefault();
+    if (setupPassword !== setupConfirm) return toast.error('Error', 'Passwords do not match');
+    if (setupPassword.length < 8) return toast.error('Error', 'Password must be at least 8 characters');
+    setSettingUp(true);
+    try {
+      const array = new Uint8Array(16);
+      window.crypto.getRandomValues(array);
+      const masterSalt = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+      
+      const res = await fetch('/api/auth/setup-vault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ masterSalt }),
+      });
+      if (res.ok) {
+        await update(); // refresh session
+        toast.success('Vault Secured', 'Your master password has been set');
+        const key = await deriveKey(setupPassword, masterSalt);
+        setCryptoKey(key);
+      } else {
+        toast.error('Error', 'Failed to setup vault');
+      }
+    } catch (err) {
+      toast.error('Error', 'Unexpected error setting up vault');
+    } finally {
+      setSettingUp(false);
     }
   };
 
@@ -196,6 +231,58 @@ export default function VaultPage() {
 
   if (status === 'loading') return <div className="page-container"><LoadingSkeleton /></div>;
   if (!session) return null;
+
+  // Master password setup screen (OAuth first time)
+  if (session && !session.user.masterSalt) {
+    return (
+      <div className="master-lock-overlay">
+        <form className="master-lock-card" onSubmit={handleSetupVault}>
+          <div className="master-lock-icon">🛡️</div>
+          <h2>Secure Your Vault</h2>
+          <p>Since you signed in with Google, you need to create a Master Password to encrypt your vault. This is required for zero-knowledge security.</p>
+          
+          <input
+            type="password"
+            className="input"
+            placeholder="Create Master Password"
+            value={setupPassword}
+            onChange={(e) => {
+              setSetupPassword(e.target.value);
+              setSetupStrength(analyzePasswordStrength(e.target.value));
+            }}
+            required
+            autoComplete="new-password"
+          />
+          {setupStrength && setupPassword && (
+            <div className="strength-meter" style={{ marginBottom: '16px' }}>
+              <div className="strength-bar-track">
+                <div className="strength-bar-fill" style={{ width: `${setupStrength.score}%`, background: setupStrength.color }} />
+              </div>
+              <div className="strength-label">
+                <span className="label-text" style={{ color: setupStrength.color }}>{setupStrength.label}</span>
+                <span style={{ color: 'var(--text-tertiary)' }}>{setupStrength.score}/100</span>
+              </div>
+            </div>
+          )}
+
+          <input
+            type="password"
+            className="input"
+            placeholder="Confirm Master Password"
+            value={setupConfirm}
+            onChange={(e) => setSetupConfirm(e.target.value)}
+            required
+            autoComplete="new-password"
+            style={{ marginTop: '16px' }}
+          />
+
+          <button type="submit" className="btn btn-primary btn-lg" disabled={settingUp} style={{ width: '100%', marginTop: '16px' }}>
+            {settingUp ? <><span className="spinner"></span> Securing...</> : '🔒 Secure My Vault'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   // Master password lock screen
   if (!cryptoKey) {

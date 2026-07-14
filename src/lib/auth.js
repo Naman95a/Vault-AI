@@ -1,10 +1,17 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 
 export const authOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -47,11 +54,27 @@ export const authOptions = {
     maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
-        token.masterSalt = user.masterSalt;
+        token.masterSalt = user.masterSalt || null;
       }
+      
+      // On every session check, if the user doesn't have a masterSalt in the token,
+      // try to fetch it from the database (in case they just set it up via OAuth flow)
+      if (!token.masterSalt && token.email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
+        if (dbUser && dbUser.masterSalt) {
+          token.masterSalt = dbUser.masterSalt;
+        }
+      }
+      
+      // If the client calls update(), refresh from DB
+      if (trigger === 'update' && token.email) {
+         const dbUser = await prisma.user.findUnique({ where: { email: token.email } });
+         if (dbUser && dbUser.masterSalt) token.masterSalt = dbUser.masterSalt;
+      }
+      
       return token;
     },
     async session({ session, token }) {
