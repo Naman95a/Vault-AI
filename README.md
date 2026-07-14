@@ -1,36 +1,136 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔐 VaultAI — AI-Powered Password Manager
 
-## Getting Started
+> **A zero-knowledge, end-to-end encrypted password manager with Google Gemini AI integration.**
 
-First, run the development server:
+Built with Next.js 15, Prisma + SQLite, and AES-256-GCM client-side encryption. The server never sees your plaintext passwords.
+
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![Prisma](https://img.shields.io/badge/Prisma-5-blue?logo=prisma)
+![Gemini AI](https://img.shields.io/badge/Google_Gemini-AI-red?logo=google)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+## ✨ Features
+
+### 🔐 Security
+- **Zero-Knowledge Architecture** — All encryption/decryption happens in your browser using Web Crypto API
+- **AES-256-GCM** encryption with **PBKDF2** key derivation (100,000 iterations)
+- Server only stores encrypted ciphertext — it can never read your passwords
+- Auto-lock after inactivity
+
+### 🤖 AI Integration (Google Gemini)
+- **AI Security Audit** — Analyzes vault health without accessing actual passwords
+- **Smart Password Analysis** — AI-powered recommendations for password improvement
+- **AI Security Assistant** — Chat with an AI about password security best practices
+- **Contextual Suggestions** — AI tips based on account type
+
+### 🎨 Premium UI
+- Dark glassmorphism design with gradient accents
+- Smooth animations and micro-interactions
+- Responsive design (mobile, tablet, desktop)
+- Toast notifications, skeleton loading, password strength meter
+
+### 🛠 Core Features
+- Full CRUD for credentials (add, edit, delete, search, filter)
+- Password generator with configurable options
+- Category management (Social, Banking, Work, etc.)
+- Favorites system with one-click copy
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm
+
+### Installation
 
 ```bash
+# Clone the repo
+git clone <your-repo-url>
+cd vaultai
+
+# Install dependencies
+npm install
+
+# Set up the database
+npx prisma migrate dev
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env` file:
 
-## Learn More
+```env
+DATABASE_URL="file:./dev.db"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+GEMINI_API_KEY=""  # Get free key from aistudio.google.com
+```
 
-To learn more about Next.js, take a look at the following resources:
+> **Note:** AI features work without a Gemini API key (uses built-in heuristics), but adding a key unlocks the full AI experience.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🏗 Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 15 (App Router) |
+| Database | SQLite + Prisma ORM |
+| Auth | NextAuth.js (Credentials + JWT) |
+| Encryption | Web Crypto API (AES-256-GCM + PBKDF2) |
+| AI | Google Gemini API |
+| Styling | Vanilla CSS (Custom Design System) |
 
-## Deploy on Vercel
+## 📁 Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── api/          # REST API routes
+│   │   ├── auth/     # NextAuth + Registration
+│   │   ├── credentials/  # CRUD operations
+│   │   └── ai/       # Gemini AI endpoints
+│   ├── auth/         # Login & Register pages
+│   ├── vault/        # Vault dashboard & AI Hub
+│   ├── globals.css   # Design system
+│   └── layout.js     # Root layout
+├── components/       # Reusable UI components
+└── lib/              # Core utilities
+    ├── auth.js       # NextAuth configuration
+    ├── crypto.js     # Client-side encryption
+    ├── gemini.js     # Gemini AI service
+    └── prisma.js     # Database client
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔒 Security Model
+
+```
+User's Browser                    Server
+    │                               │
+    │  Master Password              │
+    │       ↓                       │
+    │  PBKDF2 (100K iter)           │
+    │       ↓                       │
+    │  AES-256-GCM Key              │
+    │       ↓                       │
+    │  Encrypt Data                 │
+    │       ↓                       │
+    │  Encrypted Blob ──────────►   │  Store Blob
+    │                               │  (can't decrypt)
+    │  ◄────────────── Fetch Blob   │
+    │       ↓                       │
+    │  Decrypt Data                 │
+    │       ↓                       │
+    │  Plaintext                    │
+```
+
+## 📝 License
+
+MIT License — feel free to use this for your portfolio!
+
+---
+
+**Built with ❤️ by [Your Name]**

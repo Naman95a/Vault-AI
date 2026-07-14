@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  name           String?
+  hashedPassword String
+  masterSalt     String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  credentials    Credential[]
+}
+
+model Credential {
+  id            String   @id @default(cuid())
+  userId        String
+  encryptedData String
+  iv            String
+  name          String
+  url           String?
+  category      String   @default("General")
+  isFavorite    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
